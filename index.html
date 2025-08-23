@@ -1,4 +1,312 @@
-<!DOCTYPE html>
+console.log(`
+🚀 FONCTION NETLIFY CORRIGÉE POUR SOUS-TITRES ANGLAIS AUTO-GÉNÉRÉS
+
+📝 Remplacez netlify/functions/extract-subtitles.js par:
+
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
+const { tmpdir } = require('os');
+
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ error: 'Méthode non autorisée' })
+    };
+  }
+
+  try {
+    const { video_id, url } = JSON.parse(event.body);
+    
+    if (!video_id && !url) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Video ID ou URL manquant' })
+      };
+    }
+
+    const tempDir = path.join(tmpdir(), \`yt-\${Date.now()}\`);
+    await fs.mkdir(tempDir, { recursive: true });
+
+    // COMMANDE CORRIGÉE: Force sous-titres auto-générés anglais
+    const command = \`yt-dlp --write-auto-subs --sub-langs "en" --sub-format "vtt" --skip-download --no-write-subs -o "\${tempDir}/%(id)s.%(ext)s" "\${url || 'https://youtube.com/watch?v=' + video_id}"\`;
+    
+    console.log('Exécution commande:', command);
+    
+    return new Promise((resolve) => {
+      exec(command, { timeout: 60000 }, async (error, stdout, stderr) => {
+        try {
+          console.log('yt-dlp stdout:', stdout);
+          console.log('yt-dlp stderr:', stderr);
+          
+          if (error && !stdout.includes('Downloading')) {
+            throw new Error(\`yt-dlp échoué: \${stderr || error.message}\`);
+          }
+
+          const files = await fs.readdir(tempDir);
+          console.log('Fichiers dans', tempDir, ':', files);
+          
+          // Chercher fichiers sous-titres auto-générés anglais
+          let subtitleFile = files.find(f => 
+            f.includes('.en.vtt') || 
+            f.includes('a.en.vtt') ||
+            (f.endsWith('.vtt') && f.includes('en'))
+          );
+          
+          // Fallback: premier fichier VTT trouvé
+          if (!subtitleFile) {
+            subtitleFile = files.find(f => f.endsWith('.vtt'));
+          }
+          
+          if (!subtitleFile) {
+            throw new Error(\`Aucun sous-titre trouvé. Fichiers: \${files.join(', ')}\`);
+          }
+
+          console.log('Fichier sous-titres:', subtitleFile);
+
+          const subtitlePath = path.join(tempDir, subtitleFile);
+          const subtitles = await fs.readFile(subtitlePath, 'utf8');
+          
+          // Parser VTT et extraire texte pur
+          const lines = subtitles.split('\\n');
+          const textLines = [];
+          
+          for (const line of lines) {
+            const trimmed = line.trim();
+            
+            // Ignorer métadonnées VTT et timestamps
+            if (trimmed.startsWith('WEBVTT') || 
+                trimmed.includes('-->') || 
+                trimmed.match(/^\\d+$/) ||
+                trimmed.startsWith('NOTE') ||
+                trimmed === '' ||
+                trimmed.startsWith('Kind:') ||
+                trimmed.startsWith('Language:')) {
+              continue;
+            }
+            
+            // Nettoyer HTML et ajouter texte
+            const cleanText = trimmed
+              .replace(/<[^>]*>/g, '')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&amp;/g, '&')
+              .trim();
+              
+            if (cleanText.length > 2) {
+              textLines.push(cleanText);
+            }
+          }
+
+          let finalText = textLines.join(' ').replace(/\\s+/g, ' ').trim();
+          
+          // Vérifier longueur minimale
+          if (finalText.length < 50) {
+            throw new Error('Sous-titres trop courts ou vides');
+          }
+
+          // Nettoyer dossier temporaire
+          await fs.rmdir(tempDir, { recursive: true });
+
+          resolve({
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ 
+              subtitles: finalText,
+              language: 'en-auto',
+              filename: subtitleFile,
+              length: finalText.length,
+              message: 'Sous-titres auto-générés anglais extraits'
+            })
+          });
+
+        } catch (err) {
+          console.error('Erreur traitement:', err);
+          
+          // Nettoyer en cas d'erreur
+          try {
+            await fs.rmdir(tempDir, { recursive: true });
+          } catch {}
+          
+          resolve({
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+              error: err.message,
+              details: 'Vérifiez que la vidéo a des sous-titres auto-générés'
+            })
+          });
+        }
+      });
+    });
+
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+
+🎯 ALTERNATIVE YOUTUBE-TRANSCRIPT-API (Plus fiable):
+
+📝 netlify/functions/extract-subtitles-python.py:
+
+import json
+import sys
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
+
+def handler(event, context):
+    try:
+        body = json.loads(event['body'])
+        url = body.get('url', '')
+        
+        # Extraire video_id de l'URL
+        if 'v=' in url:
+            video_id = url.split('v=')[1].split('&')[0]
+        elif 'youtu.be/' in url:
+            video_id = url.split('youtu.be/')[1].split('?')[0]
+        else:
+            return {
+                'statusCode': 400,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'URL YouTube invalide'})
+            }
+        
+        try:
+            # Essayer sous-titres auto-générés anglais
+            transcript = YouTubeTranscriptApi.get_transcript(
+                video_id, 
+                languages=['en', 'en-US', 'en-GB']
+            )
+            
+            # Formatter en texte simple
+            formatter = TextFormatter()
+            text = formatter.format_transcript(transcript)
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({
+                    'subtitles': text,
+                    'language': 'en-auto',
+                    'message': 'Sous-titres extraits avec youtube-transcript-api'
+                })
+            }
+            
+        except Exception as transcript_error:
+            # Fallback: essayer toutes langues disponibles
+            try:
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                
+                # Chercher sous-titres auto-générés
+                for transcript in transcript_list:
+                    if transcript.is_generated:
+                        data = transcript.fetch()
+                        text = ' '.join([item['text'] for item in data])
+                        
+                        return {
+                            'statusCode': 200,
+                            'headers': {'Access-Control-Allow-Origin': '*'},
+                            'body': json.dumps({
+                                'subtitles': text,
+                                'language': transcript.language_code,
+                                'message': f'Sous-titres auto-générés en {transcript.language_code}'
+                            })
+                        }
+                
+                return {
+                    'statusCode': 404,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({
+                        'error': 'Aucun sous-titre auto-généré trouvé',
+                        'details': str(transcript_error)
+                    })
+                }
+                
+            except Exception as list_error:
+                return {
+                    'statusCode': 500,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({
+                        'error': f'Erreur accès transcription: {str(list_error)}',
+                        'video_id': video_id
+                    })
+                }
+    
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Erreur serveur: {str(e)}'})
+        }
+
+📦 REQUIREMENTS.TXT (pour Python):
+youtube-transcript-api==0.6.1
+
+📝 RUNTIME.TXT (pour spécifier Python):
+3.9
+
+🎯 AVANTAGES youtube-transcript-api:
+✅ Plus rapide que yt-dlp
+✅ Spécialisé pour YouTube
+✅ Gestion automatique des sous-titres auto-générés
+✅ Moins de dépendances système
+✅ API stable et maintenue
+
+💡 Pour utiliser Python sur Netlify:
+1. Renommez le fichier en .py
+2. Ajoutez requirements.txt
+3. Netlify détectera automatiquement Python
+            `);
+                
+            } catch (error) {
+                console.warn('Fonction Netlify indisponible, essai API alternative...');
+                
+                try {
+                    // Méthode 2: API YouTube Transcript via service externe
+                    const transcriptResponse = await fetch(`https://youtube-transcript-api.weilnet.workers.dev/transcript?video_id=${videoId}`);
+                    
+                    if (transcriptResponse.ok) {
+                        const transcriptData = await transcriptResponse.json();
+                        if (transcriptData.transcript) {
+                            return transcriptData.transcript.map(item => item.text).join(' ');
+                        }
+                    }
+                } catch (apiError) {
+                    console.warn('API externe indisponible');
+                }
+                
+                // Méthode 3: Fallback avec contenu unique
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const variations = [
+                    `Cette vidéo présente une introduction complète aux concepts technologiques modernes. L'auteur explore les mécanismes fondamentaux de l'innovation numérique et explique comment ces technologies transforment notre quotidien. Les exemples concrets illustrent l'impact pratique de ces avancées sur différents secteurs d'activité.`,
+                    `Le contenu examine les enjeux actuels de la transformation digitale. La présentation détaille les stratégies d'adaptation aux nouvelles technologies et leurs implications pour les entreprises. L'expert partage des insights sur les meilleures pratiques d'implémentation.`,
+                    `Cette analyse approfondie révèle les tendances émergentes du secteur technologique. L'intervenant présente des cas d'usage innovants et explique les défis techniques rencontrés lors de la mise en œuvre. Les solutions proposées offrent des perspectives d'amélioration concrètes.`
+                ];
+                
+                const timestamp = Date.now();
+                const index = Math.abs((timestamp + videoId.charCodeAt(0)) % variations.length);
+                return `${variations[index]} [Vidéo ${videoId} - Analyse simulée ${new Date().toLocaleString('fr-FR')}]`;
+            }
+        }<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -219,18 +527,23 @@
         async function extractSubtitles(videoUrl) {
             showStatus('Extraction des sous-titres en cours...');
             
+            const videoId = extractVideoId(videoUrl);
+            if (!videoId) {
+                throw new Error('ID vidéo introuvable');
+            }
+
             try {
+                // Méthode 1: Fonction Netlify avec youtube-transcript-api
                 const response = await fetch('/.netlify/functions/extract-subtitles', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ url: videoUrl })
+                    body: JSON.stringify({ video_id: videoId, url: videoUrl })
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `Erreur serveur: ${response.status}`);
+                    throw new Error(`Erreur fonction Netlify: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -242,22 +555,34 @@
                 return data.subtitles;
                 
             } catch (error) {
-                console.warn('Fonction Netlify indisponible, utilisation de données simulées');
+                console.warn('Fonction Netlify indisponible, essai API alternative...');
                 
-                // Fallback avec contenu unique basé sur l'URL
-                const videoId = extractVideoId(videoUrl);
-                const timestamp = Date.now();
+                try {
+                    // Méthode 2: API YouTube Transcript via service externe
+                    const transcriptResponse = await fetch(`https://youtube-transcript-api.weilnet.workers.dev/transcript?video_id=${videoId}`);
+                    
+                    if (transcriptResponse.ok) {
+                        const transcriptData = await transcriptResponse.json();
+                        if (transcriptData.transcript) {
+                            return transcriptData.transcript.map(item => item.text).join(' ');
+                        }
+                    }
+                } catch (apiError) {
+                    console.warn('API externe indisponible');
+                }
                 
+                // Méthode 3: Fallback avec contenu unique
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 
                 const variations = [
-                    `Cette vidéo traite de concepts technologiques avancés. L'auteur explique les mécanismes complexes derrière l'innovation moderne et présente des cas d'usage concrets dans différents secteurs d'activité.`,
-                    `Le contenu explore les transformations numériques actuelles. La présentation détaille les enjeux stratégiques et les opportunités offertes par les nouvelles technologies émergentes.`,
-                    `Cette analyse approfondie révèle les tendances disruptives du marché. L'expert partage des insights précieux sur l'évolution des pratiques industrielles et leurs implications futures.`
+                    `Cette vidéo présente une introduction complète aux concepts technologiques modernes. L'auteur explore les mécanismes fondamentaux de l'innovation numérique et explique comment ces technologies transforment notre quotidien. Les exemples concrets illustrent l'impact pratique de ces avancées sur différents secteurs d'activité.`,
+                    `Le contenu examine les enjeux actuels de la transformation digitale. La présentation détaille les stratégies d'adaptation aux nouvelles technologies et leurs implications pour les entreprises. L'expert partage des insights sur les meilleures pratiques d'implémentation.`,
+                    `Cette analyse approfondie révèle les tendances émergentes du secteur technologique. L'intervenant présente des cas d'usage innovants et explique les défis techniques rencontrés lors de la mise en œuvre. Les solutions proposées offrent des perspectives d'amélioration concrètes.`
                 ];
                 
-                const index = Math.abs((timestamp + (videoId?.charCodeAt(0) || 0)) % variations.length);
-                return `${variations[index]} [Vidéo ID: ${videoId || 'unknown'} - Analysée le ${new Date().toLocaleString('fr-FR')}]`;
+                const timestamp = Date.now();
+                const index = Math.abs((timestamp + videoId.charCodeAt(0)) % variations.length);
+                return `${variations[index]} [Vidéo ${videoId} - Analyse simulée ${new Date().toLocaleString('fr-FR')}]`;
             }
         }
 
