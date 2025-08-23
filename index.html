@@ -616,23 +616,26 @@ Powered by Gemini AI
         window.addEventListener('load', function() {
             log('YouTube Transcript Insight - Démarrage');
             
-            // Vérifier la clé par défaut directement
-            if (DEFAULT_API_KEY && DEFAULT_API_KEY.startsWith('AIzaSy') && DEFAULT_API_KEY.length > 35) {
-                showStatus('✅ App prête - Clé API par défaut active !', 'success');
-                log(`✅ Clé API par défaut détectée: ${DEFAULT_API_KEY.substring(0, 12)}...${DEFAULT_API_KEY.slice(-6)}`);
-                log('🎯 Vos amis peuvent utiliser l\'app sans configuration !');
-            } else {
-                showStatus('❌ Clé API par défaut invalide - Vérifiez le code', 'error');
-                log(`❌ Clé actuelle: "${DEFAULT_API_KEY}"`);
-                log('⚠️ La clé doit commencer par "AIzaSy" et faire plus de 35 caractères');
+            // Masquer complètement la section API
+            const apiSection = document.querySelector('.api-key-section');
+            if (apiSection) {
+                apiSection.style.display = 'none';
             }
             
-            setTimeout(hideStatus, 4000);
-            log('💡 Laissez le champ vide pour utiliser la clé par défaut');
+            // Vérifier la clé par défaut directement
+            if (DEFAULT_API_KEY && DEFAULT_API_KEY.startsWith('AIzaSy') && DEFAULT_API_KEY.length > 35) {
+                showStatus('✅ App prête - Analyse automatique activée !', 'success');
+                log(`✅ Clé API intégrée: ${DEFAULT_API_KEY.substring(0, 12)}...${DEFAULT_API_KEY.slice(-6)}`);
+                log('🎯 Interface simplifiée - Prêt pour analyse !');
+            } else {
+                showStatus('❌ Clé API par défaut invalide dans le code', 'error');
+                log(`❌ Clé actuelle: "${DEFAULT_API_KEY}"`);
+                log('⚠️ Remplacez DEFAULT_API_KEY par votre vraie clé Gemini');
+            }
+            
+            setTimeout(hideStatus, 3000);
+            log('💡 Collez des sous-titres et cliquez Analyser');
         });
-
-        // Simplification - plus de test de clé personnelle
-        document.getElementById('apiKey').style.display = 'none';
     </script>
 </body>
 </html>
