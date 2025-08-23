@@ -10,7 +10,7 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, headers, body: '' };
   }
 
-  // Votre clé API sécurisée dans le fichier
+  // Votre clé API sécurisée
   const API_KEY = 'AIzaSyCccIgov-nc_OiFQ0eXm4xnJpaWJ1rYsvE';
 
   return {
@@ -18,8 +18,7 @@ exports.handler = async (event, context) => {
     headers,
     body: JSON.stringify({
       apiKey: API_KEY,
-      owner: 'Configuré par le propriétaire',
-      message: 'Clé API par défaut chargée'
+      message: 'Clé par défaut du propriétaire'
     })
   };
 };
