@@ -4,7 +4,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 def handler(event, context):
     headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type', 
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Content-Type': 'application/json'
     }
@@ -34,7 +34,8 @@ def handler(event, context):
             'body': json.dumps({
                 'subtitles': text,
                 'language': 'en-auto',
-                'message': 'Sous-titres auto-générés extraits'
+                'video_id': video_id,
+                'message': 'Vrais sous-titres extraits !'
             })
         }
         
