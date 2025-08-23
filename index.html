@@ -243,27 +243,8 @@
         let analysisResult = '';
         let debugLogs = [];
         
-        // Chargement de la clé API depuis un fichier Netlify
-        let DEFAULT_API_KEY = null;
-
-        async function loadApiKeyFromFile() {
-            try {
-                // Charger la clé depuis un fichier de config
-                const response = await fetch('/.netlify/functions/get-api-key');
-                if (response.ok) {
-                    const data = await response.json();
-                    DEFAULT_API_KEY = data.apiKey;
-                    log('🔑 Clé API par défaut chargée depuis fichier config');
-                    return true;
-                } else {
-                    log('⚠️ Fichier config API non trouvé');
-                    return false;
-                }
-            } catch (error) {
-                log('⚠️ Erreur chargement config API: ' + error.message);
-                return false;
-            }
-        }
+        // Votre clé API par défaut (directement dans le code)
+        const DEFAULT_API_KEY = 'AIzaSyCccIgov-nc_OiFQ0eXm4xnJpaWJ1rYsvE';
 
         function getApiKey() {
             // 1. Vérifier si l'utilisateur a entré sa propre clé
@@ -273,7 +254,7 @@
                 return userKey;
             }
             
-            // 2. Sinon utiliser la clé par défaut du fichier
+            // 2. Sinon utiliser la clé par défaut
             if (DEFAULT_API_KEY) {
                 log('🔑 Utilisation clé API par défaut du propriétaire');
                 return DEFAULT_API_KEY;
@@ -631,23 +612,19 @@ ${debugLogs.join('\n')}
         }
 
         // Test automatique au chargement
-        window.addEventListener('load', async function() {
+        window.addEventListener('load', function() {
             log('YouTube Transcript Insight - Démarrage');
             
-            // Charger la clé API depuis le fichier config
-            showStatus('🔄 Chargement configuration...', 'loading');
-            const configLoaded = await loadApiKeyFromFile();
-            
-            if (configLoaded) {
-                showStatus('✅ Configuration chargée - App prête à utiliser !', 'success');
-                log('✅ Clé API par défaut disponible');
+            // Vérifier la clé par défaut
+            if (DEFAULT_API_KEY && DEFAULT_API_KEY.startsWith('AIzaSy')) {
+                showStatus('✅ App prête - Clé API par défaut configurée !', 'success');
+                log(`✅ Clé API par défaut: ${DEFAULT_API_KEY.substring(0, 10)}...${DEFAULT_API_KEY.slice(-4)}`);
             } else {
-                showStatus('⚠️ Config non trouvée - Entrez votre clé personnelle', 'error');
-                log('⚠️ Créez netlify/functions/get-api-key.js pour la clé par défaut');
+                showStatus('⚠️ Clé API par défaut non configurée - Entrez votre clé', 'error');
+                log('⚠️ Remplacez DEFAULT_API_KEY par votre vraie clé Gemini');
             }
             
-            setTimeout(hideStatus, 4000);
-            
+            setTimeout(hideStatus, 3000);
             log('💡 Astuce: Copiez les sous-titres depuis YouTube pour une analyse directe');
         });
 
