@@ -10,8 +10,8 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, headers, body: '' };
   }
 
-  // Votre clé API sécurisée
-  const API_KEY = 'AIzaSyCccIgov-nc_OiFQ0eXm4xnJpaWJ1rYsvE';
+  // REMPLACEZ par votre vraie clé Gemini
+  const API_KEY = 'AIzaSyCccIgov-nc_OiFQ0eXm4xnJpaWJ1rYsvE'; // ← Votre clé complète ici
 
   return {
     statusCode: 200,
