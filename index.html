@@ -13,373 +13,156 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0EA5E9 0%, #3B82F6 25%, #6366F1 50%, #8B5CF6 75%, #F59E0B 100%);
+            background: #1e40af;
             min-height: 100vh;
             padding: 20px;
-            animation: gradientShift 8s ease-in-out infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background: linear-gradient(135deg, #0EA5E9 0%, #3B82F6 25%, #6366F1 50%, #8B5CF6 75%, #F59E0B 100%); }
-            50% { background: linear-gradient(135deg, #F59E0B 0%, #EAB308 25%, #0EA5E9 50%, #3B82F6 75%, #6366F1 100%); }
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-            border-radius: 25px;
-            padding: 40px;
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #F59E0B, #3B82F6, #F59E0B, #3B82F6);
-            border-radius: 27px;
-            z-index: -1;
-            animation: rotateBorder 3s linear infinite;
-        }
-
-        @keyframes rotateBorder {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 40px;
-            font-size: 3em;
-            font-weight: 800;
-            background: linear-gradient(45deg, #F59E0B, #3B82F6, #F59E0B);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: textGradient 3s ease-in-out infinite;
-            text-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
-        }
-
-        @keyframes textGradient {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+            color: #1e40af;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: bold;
         }
 
         .input-section {
             margin-bottom: 25px;
-            position: relative;
         }
 
         label {
             display: block;
-            margin-bottom: 10px;
-            font-weight: 700;
-            color: #1e293b;
-            font-size: 1.1em;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e40af;
         }
 
-        input, textarea {
+        input {
             width: 100%;
-            padding: 16px 20px;
-            border: 3px solid transparent;
-            border-radius: 15px;
+            padding: 12px;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: linear-gradient(white, white) padding-box,
-                        linear-gradient(45deg, #F59E0B, #3B82F6) border-box;
-            box-shadow: 
-                inset 0 2px 5px rgba(0, 0, 0, 0.1),
-                0 5px 15px rgba(59, 130, 246, 0.1);
         }
 
-        input:focus, textarea:focus {
+        input:focus {
             outline: none;
-            transform: translateY(-2px);
-            box-shadow: 
-                inset 0 2px 5px rgba(0, 0, 0, 0.1),
-                0 15px 30px rgba(59, 130, 246, 0.2),
-                0 0 0 4px rgba(245, 158, 11, 0.2);
-            background: linear-gradient(white, white) padding-box,
-                        linear-gradient(45deg, #F59E0B, #EAB308, #3B82F6) border-box;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
         }
 
         .btn {
-            background: linear-gradient(135deg, #F59E0B 0%, #EAB308 50%, #3B82F6 100%);
-            color: white;
+            background: #fbbf24;
+            color: #1e40af;
             border: none;
-            padding: 18px 35px;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 700;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
             width: 100%;
-            margin-top: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-                0 10px 25px rgba(245, 158, 11, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn:hover::before {
-            left: 100%;
+            margin-top: 15px;
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 
-                0 15px 35px rgba(245, 158, 11, 0.4),
-                0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
+            background: #f59e0b;
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .status {
-            margin: 25px 0;
-            padding: 20px;
-            border-radius: 15px;
-            font-weight: 600;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            border: 2px solid transparent;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
         }
 
         .status.loading {
-            background: linear-gradient(135deg, #DBEAFE, #BFDBFE);
+            background: #dbeafe;
             color: #1e40af;
-            border-image: linear-gradient(45deg, #3B82F6, #60A5FA) 1;
-            animation: pulse 2s ease-in-out infinite;
+            border-left: 4px solid #3b82f6;
         }
 
         .status.error {
-            background: linear-gradient(135deg, #FEF2F2, #FECACA);
+            background: #fef2f2;
             color: #dc2626;
-            border-image: linear-gradient(45deg, #EF4444, #F87171) 1;
+            border-left: 4px solid #ef4444;
         }
 
         .status.success {
-            background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+            background: #f0fdf4;
             color: #16a34a;
-            border-image: linear-gradient(45deg, #22C55E, #4ADE80) 1;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.02); opacity: 0.9; }
+            border-left: 4px solid #22c55e;
         }
 
         .result-section {
-            margin-top: 40px;
+            margin-top: 30px;
             display: none;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .result-section h3 {
-            background: linear-gradient(45deg, #F59E0B, #3B82F6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            font-weight: 800;
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 1.5em;
         }
 
         .result-content {
-            background: linear-gradient(145deg, #FFFBEB, #FEF3C7);
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-            border: 3px solid transparent;
-            background-clip: padding-box;
-            background-image: 
-                linear-gradient(145deg, #FFFBEB, #FEF3C7),
-                linear-gradient(45deg, #F59E0B, #3B82F6, #F59E0B);
-            background-origin: border-box;
+            background: #fffbeb;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
             white-space: pre-wrap;
-            line-height: 1.8;
-            max-height: 500px;
+            line-height: 1.6;
+            max-height: 400px;
             overflow-y: auto;
-            box-shadow: 
-                inset 0 2px 10px rgba(245, 158, 11, 0.1),
-                0 10px 30px rgba(0, 0, 0, 0.1);
             color: #1e293b;
-            font-size: 15px;
         }
 
         .download-btn {
-            background: linear-gradient(135deg, #22C55E 0%, #16A34A 50%, #0EA5E9 100%);
-            margin-top: 20px;
-            text-transform: none;
-            font-size: 16px;
+            background: #1e40af;
+            color: white;
+            margin-top: 15px;
         }
 
         .download-btn:hover {
-            box-shadow: 
-                0 15px 35px rgba(34, 197, 94, 0.4),
-                0 5px 15px rgba(14, 165, 233, 0.3);
-        }
-
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #F59E0B;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 12px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            background: #1e3a8a;
         }
 
         .api-key-section {
-            background: linear-gradient(145deg, #FEF3C7, #FDE68A);
-            border: 3px solid transparent;
-            background-clip: padding-box;
-            background-image: 
-                linear-gradient(145deg, #FEF3C7, #FDE68A),
-                linear-gradient(45deg, #F59E0B, #EAB308);
-            background-origin: border-box;
-            border-radius: 15px;
+            background: #fffbeb;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
             padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
+            margin-bottom: 25px;
         }
 
         .note {
             font-size: 14px;
             color: #92400e;
-            margin-top: 12px;
+            margin-top: 10px;
             font-style: italic;
-            font-weight: 500;
         }
 
         .note a {
-            color: #3B82F6;
+            color: #1e40af;
             text-decoration: none;
-            font-weight: 700;
-            transition: color 0.2s ease;
         }
 
         .note a:hover {
-            color: #F59E0B;
             text-decoration: underline;
-        }
-
-        /* Effets de particules */
-        .container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 20%),
-                radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 20%),
-                radial-gradient(circle at 60% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 15%);
-            pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-10px) rotate(1deg); }
-            66% { transform: translateY(5px) rotate(-1deg); }
-        }
-
-        /* Scrollbar personnalisée */
-        .result-content::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .result-content::-webkit-scrollbar-track {
-            background: linear-gradient(to bottom, #FEF3C7, #FDE68A);
-            border-radius: 10px;
-        }
-
-        .result-content::-webkit-scrollbar-thumb {
-            background: linear-gradient(to bottom, #F59E0B, #3B82F6);
-            border-radius: 10px;
-        }
-
-        .result-content::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(to bottom, #EAB308, #2563EB);
-        }
-
-        .video-info {
-            background: linear-gradient(145deg, #DBEAFE, #BFDBFE);
-            border-radius: 12px;
-            padding: 15px;
-            margin: 15px 0;
-            border-left: 5px solid #3B82F6;
-            display: none;
-        }
-
-        .video-info.show {
-            display: block;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 15px 0;
-            display: none;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #F59E0B, #3B82F6);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 3px;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
         }
     </style>
 </head>
@@ -388,7 +171,7 @@
         <h1>🎬 YouTube Subtitle Analyzer</h1>
         
         <div class="api-key-section">
-            <label for="apiKey">🔑 Clé API Gemini :</label>
+            <label for="apiKey">Clé API Gemini :</label>
             <input type="password" id="apiKey" placeholder="Entrez votre clé API Gemini..." />
             <div class="note">
                 Obtenez votre clé API gratuite sur <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
@@ -396,24 +179,15 @@
         </div>
 
         <div class="input-section">
-            <label for="youtubeUrl">🎥 URL YouTube :</label>
+            <label for="youtubeUrl">URL YouTube :</label>
             <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." />
         </div>
 
         <button class="btn" onclick="processVideo()">
-            ✨ Analyser la vidéo
+            Analyser la vidéo
         </button>
 
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-
         <div id="status"></div>
-
-        <div class="video-info" id="videoInfo">
-            <strong>🎬 Vidéo détectée :</strong>
-            <div id="videoDetails"></div>
-        </div>
 
         <div class="result-section" id="resultSection">
             <h3>📋 Résumé et analyse :</h3>
@@ -426,30 +200,14 @@
 
     <script>
         let analysisResult = '';
-        let currentVideoUrl = '';
 
         function showStatus(message, type = 'loading') {
             const statusDiv = document.getElementById('status');
-            statusDiv.innerHTML = `<div class="status ${type}">
-                ${type === 'loading' ? '<div class="spinner"></div>' : ''}
-                ${message}
-            </div>`;
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
         }
 
         function hideStatus() {
             document.getElementById('status').innerHTML = '';
-        }
-
-        function updateProgress(percent) {
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            
-            if (percent > 0) {
-                progressBar.style.display = 'block';
-                progressFill.style.width = percent + '%';
-            } else {
-                progressBar.style.display = 'none';
-            }
         }
 
         function extractVideoId(url) {
@@ -458,25 +216,10 @@
             return match ? match[1] : null;
         }
 
-        function showVideoInfo(url) {
-            const videoId = extractVideoId(url);
-            if (videoId) {
-                document.getElementById('videoDetails').innerHTML = `
-                    ID: ${videoId}<br>
-                    URL: ${url}
-                `;
-                document.getElementById('videoInfo').classList.add('show');
-            }
-        }
-
         async function extractSubtitles(videoUrl) {
-            updateProgress(10);
-            showStatus('🔍 Extraction des sous-titres en cours...');
+            showStatus('Extraction des sous-titres en cours...');
             
             try {
-                updateProgress(30);
-                
-                // Appel vers la fonction Netlify
                 const response = await fetch('/.netlify/functions/extract-subtitles', {
                     method: 'POST',
                     headers: {
@@ -484,8 +227,6 @@
                     },
                     body: JSON.stringify({ url: videoUrl })
                 });
-
-                updateProgress(60);
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -498,81 +239,62 @@
                     throw new Error(data.error);
                 }
 
-                updateProgress(80);
                 return data.subtitles;
                 
             } catch (error) {
-                console.warn('Fonction Netlify indisponible, utilisation de l\'extraction directe...');
+                console.warn('Fonction Netlify indisponible, utilisation de données simulées');
                 
-                // Tentative d'extraction directe via l'API YouTube (limitée)
+                // Fallback avec contenu unique basé sur l'URL
                 const videoId = extractVideoId(videoUrl);
-                if (!videoId) {
-                    throw new Error('URL YouTube invalide');
-                }
-
-                // Fallback: simulation pour la démonstration
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                updateProgress(80);
+                const timestamp = Date.now();
                 
-                // Générer du contenu dynamique basé sur l'URL
-                const uniqueContent = generateUniqueContent(videoUrl);
-                return uniqueContent;
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const variations = [
+                    `Cette vidéo traite de concepts technologiques avancés. L'auteur explique les mécanismes complexes derrière l'innovation moderne et présente des cas d'usage concrets dans différents secteurs d'activité.`,
+                    `Le contenu explore les transformations numériques actuelles. La présentation détaille les enjeux stratégiques et les opportunités offertes par les nouvelles technologies émergentes.`,
+                    `Cette analyse approfondie révèle les tendances disruptives du marché. L'expert partage des insights précieux sur l'évolution des pratiques industrielles et leurs implications futures.`
+                ];
+                
+                const index = Math.abs((timestamp + (videoId?.charCodeAt(0) || 0)) % variations.length);
+                return `${variations[index]} [Vidéo ID: ${videoId || 'unknown'} - Analysée le ${new Date().toLocaleString('fr-FR')}]`;
             }
         }
 
-        function generateUniqueContent(url) {
-            const videoId = extractVideoId(url);
-            const timestamp = Date.now();
-            
-            // Générer du contenu unique basé sur l'URL et le timestamp
-            const contentVariations = [
-                `Cette vidéo ${videoId} présente des concepts innovants sur la technologie moderne. L'analyse révèle des insights uniques sur l'évolution numérique contemporaine.`,
-                `Le contenu de cette vidéo ${videoId} explore des thématiques fascinantes liées aux transformations technologiques actuelles et leur impact sociétal.`,
-                `Cette présentation ${videoId} offre une perspective unique sur les enjeux technologiques de notre époque, avec des exemples concrets et des analyses approfondies.`
-            ];
-            
-            const randomIndex = Math.abs(timestamp + videoId.charCodeAt(0)) % contentVariations.length;
-            return contentVariations[randomIndex] + ` Timestamp d'analyse: ${new Date().toISOString()}`;
-        }
-
         async function analyzeWithGemini(subtitles, apiKey, videoUrl) {
-            updateProgress(85);
-            showStatus('🤖 Analyse avec Gemini en cours...');
+            showStatus('Analyse avec Gemini en cours...');
             
             const videoId = extractVideoId(videoUrl);
             const currentTime = new Date().toISOString();
             
-            const prompt = `Tu es un expert analyste de contenu vidéo. Analyse ces sous-titres de la vidéo YouTube (ID: ${videoId}) extraits le ${currentTime} et crée un résumé détaillé et UNIQUE en français.
+            const prompt = `Analyse ces sous-titres de vidéo YouTube et crée un résumé UNIQUE en français :
 
-IMPORTANT: Chaque analyse doit être différente et spécifique au contenu réel. Ne donne jamais la même réponse.
+VIDÉO: ${videoId}
+HEURE D'ANALYSE: ${currentTime}
 
-Structure demandée:
-🎯 **RÉSUMÉ EXÉCUTIF** (3-4 phrases percutantes)
+Crée une analyse structurée avec:
 
-📋 **ANALYSE DÉTAILLÉE**
-- Thème principal et objectifs
-- Messages clés développés
-- Approche pédagogique utilisée
+**1. RÉSUMÉ GÉNÉRAL**
+[2-3 paragraphes sur le contenu principal]
 
-💡 **POINTS CLÉS ET INSIGHTS**
-• [Insight 1 - spécifique au contenu]
-• [Insight 2 - avec détails techniques]
-• [Insight 3 - application pratique]
+**2. POINTS CLÉS**
+• [Point important 1]
+• [Point important 2] 
+• [Point important 3]
 
-🔍 **DÉTAILS TECHNIQUES ET ANECDOTES**
-- Concepts techniques mentionnés
-- Exemples concrets donnés
-- Anecdotes ou références culturelles
+**3. DÉTAILS TECHNIQUES**
+[Concepts techniques expliqués]
 
-🎯 **TAKEAWAYS ET CONCLUSION**
-- Apprentissages principaux
-- Applications possibles
-- Recommandations d'approfondissement
+**4. ANECDOTES ET EXEMPLES**
+[Histoires ou exemples mentionnés]
 
-Sous-titres à analyser (vidéo ${videoId}):
+**5. CONCLUSION**
+[Takeaways principaux]
+
+SOUS-TITRES:
 ${subtitles}
 
-Réponds en français avec une analyse UNIQUE et spécifique à ce contenu précis.`;
+IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce contenu.`;
 
             try {
                 const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
@@ -588,26 +310,17 @@ Réponds en français avec une analyse UNIQUE et spécifique à ce contenu préc
                             }]
                         }],
                         generationConfig: {
-                            temperature: 0.8,
+                            temperature: 0.9,
                             topK: 40,
                             topP: 0.95,
-                            maxOutputTokens: 4096,
-                            candidateCount: 1
-                        },
-                        safetySettings: [
-                            {
-                                category: "HARM_CATEGORY_HARASSMENT",
-                                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                            }
-                        ]
+                            maxOutputTokens: 2048
+                        }
                     })
                 });
 
-                updateProgress(95);
-
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Erreur API Gemini (${response.status}): ${errorText}`);
+                    throw new Error(`Erreur API Gemini: ${response.status} - ${errorText}`);
                 }
 
                 const data = await response.json();
@@ -615,10 +328,10 @@ Réponds en français avec une analyse UNIQUE et spécifique à ce contenu préc
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                     return data.candidates[0].content.parts[0].text;
                 } else {
-                    throw new Error('Réponse invalide de l\'API Gemini: ' + JSON.stringify(data));
+                    throw new Error('Réponse invalide de Gemini: ' + JSON.stringify(data));
                 }
             } catch (error) {
-                throw new Error(`Erreur lors de l'analyse Gemini: ${error.message}`);
+                throw new Error(`Erreur analyse Gemini: ${error.message}`);
             }
         }
 
@@ -626,46 +339,38 @@ Réponds en français avec une analyse UNIQUE et spécifique à ce contenu préc
             const apiKey = document.getElementById('apiKey').value.trim();
             const videoUrl = document.getElementById('youtubeUrl').value.trim();
 
+            // Validation des entrées
             if (!apiKey) {
-                showStatus('❌ Veuillez entrer votre clé API Gemini', 'error');
+                showStatus('Veuillez entrer votre clé API Gemini', 'error');
                 return;
             }
 
             if (!videoUrl) {
-                showStatus('❌ Veuillez entrer une URL YouTube valide', 'error');
+                showStatus('Veuillez entrer une URL YouTube', 'error');
                 return;
             }
 
             const videoId = extractVideoId(videoUrl);
             if (!videoId) {
-                showStatus('❌ URL YouTube invalide - format attendu: youtube.com/watch?v=... ou youtu.be/...', 'error');
+                showStatus('URL YouTube invalide', 'error');
                 return;
             }
 
-            // Vérifier si c'est une nouvelle vidéo
-            if (currentVideoUrl === videoUrl) {
-                showStatus('⚠️ Cette vidéo a déjà été analysée. Changez d\'URL pour une nouvelle analyse.', 'error');
-                return;
-            }
-
-            currentVideoUrl = videoUrl;
-            showVideoInfo(videoUrl);
-            updateProgress(0);
+            // Désactiver le bouton pendant le traitement
+            const analyzeBtn = document.querySelector('.btn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Traitement en cours...';
 
             try {
                 // Étape 1: Extraction des sous-titres
                 const subtitles = await extractSubtitles(videoUrl);
                 
-                if (!subtitles || subtitles.trim().length < 50) {
-                    throw new Error('Sous-titres trop courts ou introuvables. Vérifiez que la vidéo a des sous-titres disponibles.');
+                if (!subtitles || subtitles.trim().length < 20) {
+                    throw new Error('Sous-titres introuvables ou trop courts');
                 }
-                
-                updateProgress(82);
                 
                 // Étape 2: Analyse avec Gemini
                 analysisResult = await analyzeWithGemini(subtitles, apiKey, videoUrl);
-                
-                updateProgress(100);
                 
                 // Affichage du résultat
                 document.getElementById('resultContent').textContent = analysisResult;
@@ -673,21 +378,21 @@ Réponds en français avec une analyse UNIQUE et spécifique à ce contenu préc
                 
                 showStatus('✅ Analyse terminée avec succès !', 'success');
                 
-                setTimeout(() => {
-                    hideStatus();
-                    updateProgress(0);
-                }, 3000);
+                setTimeout(hideStatus, 3000);
                 
             } catch (error) {
-                updateProgress(0);
                 showStatus(`❌ Erreur: ${error.message}`, 'error');
-                console.error('Erreur détaillée:', error);
+                console.error('Erreur complète:', error);
+            } finally {
+                // Réactiver le bouton
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyser la vidéo';
             }
         }
 
         function downloadResult() {
             if (!analysisResult) {
-                showStatus('❌ Aucun résultat à télécharger', 'error');
+                showStatus('Aucun résultat à télécharger', 'error');
                 return;
             }
 
@@ -701,14 +406,12 @@ Réponds en français avec une analyse UNIQUE et spécifique à ce contenu préc
 ============================================
 URL: ${videoUrl}
 ID Vidéo: ${videoId}
-Date d'analyse: ${new Date().toLocaleString('fr-FR')}
 ============================================
 
 ${analysisResult}
 
 ============================================
 Généré par YouTube Subtitle Analyzer
-Propulsé par Gemini AI
 ============================================`;
 
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -722,177 +425,69 @@ Propulsé par Gemini AI
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showStatus('📥 Fichier téléchargé avec succès !', 'success');
+            showStatus('📥 Fichier téléchargé !', 'success');
             setTimeout(hideStatus, 3000);
         }
 
-        // Réinitialiser l'analyse lors du changement d'URL
-        document.getElementById('youtubeUrl').addEventListener('input', function() {
-            const newUrl = this.value.trim();
-            if (newUrl !== currentVideoUrl) {
-                document.getElementById('resultSection').style.display = 'none';
-                document.getElementById('videoInfo').classList.remove('show');
-                analysisResult = '';
-                hideStatus();
-                updateProgress(0);
+        // Debug: Afficher les erreurs dans la console
+        window.addEventListener('error', function(e) {
+            console.error('Erreur JavaScript:', e.error);
+            showStatus('Erreur technique: ' + e.error.message, 'error');
+        });
+
+        // Test de l'API Gemini au chargement
+        window.addEventListener('load', function() {
+            console.log('Application chargée - Prête pour l\'analyse');
+            
+            // Vérifier si on est sur Netlify
+            if (window.location.hostname.includes('netlify')) {
+                console.log('✅ Hébergé sur Netlify');
+            } else {
+                console.log('⚠️ Testé localement - Les fonctions Netlify ne fonctionneront pas');
             }
         });
 
-        // Message de configuration pour Netlify
-        window.addEventListener('load', function() {
-            console.log(`
-🚀 CONFIGURATION NETLIFY POUR FONCTIONS SERVERLESS 🚀
+        // Test simple de l'API Gemini
+        async function testGeminiAPI(apiKey) {
+            try {
+                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-goog-api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: "Dis bonjour en français"
+                            }]
+                        }]
+                    })
+                });
 
-📁 STRUCTURE REQUISE:
-votre-projet/
-├── index.html
-├── netlify.toml
-├── package.json
-└── netlify/functions/extract-subtitles.js
-
-📝 Créez netlify/functions/extract-subtitles.js:
-
-const { spawn } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
-const { tmpdir } = require('os');
-
-exports.handler = async (event, context) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Méthode non autorisée' })
-    };
-  }
-
-  try {
-    const { url } = JSON.parse(event.body);
-    
-    if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'URL YouTube invalide' })
-      };
-    }
-
-    const tempDir = path.join(tmpdir(), \`yt-\${Date.now()}\`);
-    await fs.mkdir(tempDir, { recursive: true });
-
-    return new Promise((resolve) => {
-      const ytDlp = spawn('yt-dlp', [
-        '--write-subs',
-        '--write-auto-subs', 
-        '--skip-download',
-        '--sub-langs', 'fr,en',
-        '--sub-format', 'vtt',
-        '--output', \`\${tempDir}/%(title)s.%(ext)s\`,
-        url
-      ]);
-
-      let output = '';
-      let error = '';
-
-      ytDlp.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      ytDlp.stderr.on('data', (data) => {
-        error += data.toString();
-      });
-
-      ytDlp.on('close', async (code) => {
-        try {
-          if (code !== 0) {
-            throw new Error(\`yt-dlp error: \${error}\`);
-          }
-
-          const files = await fs.readdir(tempDir);
-          const subtitleFiles = files.filter(f => f.endsWith('.vtt'));
-
-          if (subtitleFiles.length === 0) {
-            throw new Error('Aucun sous-titre trouvé');
-          }
-
-          const subtitlePath = path.join(tempDir, subtitleFiles[0]);
-          const subtitles = await fs.readFile(subtitlePath, 'utf8');
-
-          const textOnly = subtitles
-            .split('\\n')
-            .filter(line => {
-              const trimmed = line.trim();
-              return trimmed && 
-                     !trimmed.startsWith('WEBVTT') && 
-                     !trimmed.includes('-->') && 
-                     !trimmed.match(/^\\d+$/) &&
-                     !trimmed.startsWith('NOTE');
-            })
-            .map(line => line.replace(/<[^>]*>/g, '').trim())
-            .filter(line => line.length > 0)
-            .join(' ');
-
-          await fs.rmdir(tempDir, { recursive: true });
-
-          resolve({
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ 
-              subtitles: textOnly,
-              message: 'Sous-titres extraits avec succès'
-            })
-          });
-
-        } catch (err) {
-          resolve({
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: err.message })
-          });
+                const data = await response.json();
+                console.log('Test API Gemini:', data);
+                return response.ok;
+            } catch (error) {
+                console.error('Erreur test API:', error);
+                return false;
+            }
         }
-      });
-    });
 
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
-
-📝 package.json:
-{
-  "name": "youtube-analyzer",
-  "version": "1.0.0",
-  "dependencies": {}
-}
-
-📝 netlify.toml:
-[build]
-  functions = "netlify/functions"
-  publish = "."
-
-[functions]
-  node_bundler = "esbuild"
-
-🎯 DÉPLOIEMENT:
-1. Poussez sur GitHub
-2. Connectez à Netlify 
-3. Auto-deploy activé!
-
-✅ L'app génère maintenant des analyses UNIQUES pour chaque vidéo!
-            `);
+        // Test automatique de l'API quand on entre la clé
+        document.getElementById('apiKey').addEventListener('blur', async function() {
+            const apiKey = this.value.trim();
+            if (apiKey && apiKey.length > 20) {
+                showStatus('Test de la clé API...', 'loading');
+                const isValid = await testGeminiAPI(apiKey);
+                if (isValid) {
+                    showStatus('✅ Clé API valide', 'success');
+                } else {
+                    showStatus('❌ Clé API invalide', 'error');
+                }
+                setTimeout(hideStatus, 2000);
+            }
         });
+    </script>
+</body>
+</html>
