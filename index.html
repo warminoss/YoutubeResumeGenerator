@@ -489,7 +489,6 @@ ${subtitles}`;
         }
 
         async function processVideo() {
-            const apiKey = document.getElementById('apiKey').value.trim();
             const videoUrl = document.getElementById('youtubeUrl').value.trim();
             const manualSubtitles = document.getElementById('subtitles').value.trim();
 
@@ -497,28 +496,20 @@ ${subtitles}`;
             debugLogs = [];
             document.getElementById('debugInfo').classList.remove('show');
 
+            // Vérifier la clé API par défaut
+            const apiKey = getApiKey();
             if (!apiKey) {
-                showStatus('❌ Clé API Gemini requise', 'error');
+                showStatus('❌ Clé API par défaut manquante - Vérifiez le code source', 'error');
+                log('❌ DEFAULT_API_KEY non configurée correctement');
                 return;
             }
+
+            log('🔑 Utilisation clé API par défaut configurée');
 
             // Si sous-titres manuels fournis, pas besoin d'URL
             if (!manualSubtitles && !videoUrl) {
                 showStatus('❌ URL YouTube OU sous-titres requis', 'error');
                 return;
-            }
-
-            // Auto-charger la clé API si pas remplie
-            if (!apiKey) {
-                const savedKey = loadApiKey();
-                if (savedKey) {
-                    document.getElementById('apiKey').value = savedKey;
-                    apiKey = savedKey;
-                    log('🔑 Clé API auto-chargée');
-                } else {
-                    showStatus('❌ Clé API Gemini requise', 'error');
-                    return;
-                }
             }
 
             // Validation URL seulement si pas de sous-titres manuels
@@ -556,7 +547,7 @@ ${subtitles}`;
                     throw new Error('Sous-titres trop courts (moins de 20 caractères)');
                 }
 
-                log(`Analyse de ${subtitles.length} caractères de sous-titres`);
+                log(`Analyse de ${subtitles.length} caractères de sous-titres avec clé par défaut`);
                 
                 // Analyse avec Gemini
                 analysisResult = await analyzeWithGemini(subtitles, apiKey, videoUrl);
@@ -566,7 +557,7 @@ ${subtitles}`;
                 document.getElementById('resultSection').style.display = 'block';
                 
                 showStatus('✅ Analyse terminée !', 'success');
-                log(`✅ SUCCÈS - Analyse terminée pour ${videoId}`);
+                log(`✅ SUCCÈS - Analyse terminée`);
                 
             } catch (error) {
                 showStatus(`❌ ${error.message}`, 'error');
