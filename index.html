@@ -437,7 +437,189 @@ Généré par YouTube Subtitle Analyzer
 
         // Test de l'API Gemini au chargement
         window.addEventListener('load', function() {
-            console.log('Application chargée - Prête pour l\'analyse');
+            console.log(`
+🚀 FONCTION NETLIFY CORRIGÉE POUR SOUS-TITRES ANGLAIS AUTO-GÉNÉRÉS
+
+📝 Remplacez netlify/functions/extract-subtitles.js par:
+
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
+const { tmpdir } = require('os');
+
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ error: 'Méthode non autorisée' })
+    };
+  }
+
+  try {
+    const { url } = JSON.parse(event.body);
+    
+    if (!url) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'URL manquante' })
+      };
+    }
+
+    const tempDir = path.join(tmpdir(), \`yt-\${Date.now()}\`);
+    await fs.mkdir(tempDir, { recursive: true });
+
+    // Commande modifiée pour forcer les sous-titres auto-générés anglais
+    const command = \`yt-dlp --write-auto-subs --sub-langs "en,a.en" --sub-format "vtt" --skip-download --no-write-subs -o "\${tempDir}/%(title)s.%(ext)s" "\${url}"\`;
+    
+    return new Promise((resolve) => {
+      exec(command, { timeout: 30000 }, async (error, stdout, stderr) => {
+        try {
+          console.log('yt-dlp stdout:', stdout);
+          console.log('yt-dlp stderr:', stderr);
+          
+          if (error) {
+            // Essayer une commande alternative si la première échoue
+            const altCommand = \`yt-dlp --write-auto-subs --sub-langs "en" --sub-format "vtt" --skip-download -o "\${tempDir}/%(title)s.%(ext)s" "\${url}"\`;
+            
+            return new Promise((resolve2) => {
+              exec(altCommand, { timeout: 30000 }, async (error2, stdout2, stderr2) => {
+                try {
+                  if (error2) {
+                    throw new Error(\`Extraction échouée: \${stderr2 || error2.message}\`);
+                  }
+                  await processSubtitles(tempDir, resolve2, headers);
+                } catch (err) {
+                  resolve2({
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ error: err.message })
+                  });
+                }
+              });
+            });
+          }
+
+          await processSubtitles(tempDir, resolve, headers);
+
+        } catch (err) {
+          resolve({
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: err.message })
+          });
+        }
+      });
+    });
+
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+
+async function processSubtitles(tempDir, resolve, headers) {
+  const files = await fs.readdir(tempDir);
+  console.log('Fichiers trouvés:', files);
+  
+  // Chercher les sous-titres auto-générés en anglais en priorité
+  let subtitleFile = files.find(f => f.includes('.en.vtt') || f.includes('a.en.vtt'));
+  
+  // Fallback: n'importe quel fichier VTT
+  if (!subtitleFile) {
+    subtitleFile = files.find(f => f.endsWith('.vtt'));
+  }
+  
+  if (!subtitleFile) {
+    throw new Error('Aucun fichier de sous-titres trouvé. Fichiers disponibles: ' + files.join(', '));
+  }
+
+  console.log('Fichier de sous-titres utilisé:', subtitleFile);
+
+  const subtitles = await fs.readFile(path.join(tempDir, subtitleFile), 'utf8');
+  
+  // Parser le VTT pour extraire uniquement le texte
+  const lines = subtitles.split('\\n');
+  const textLines = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Ignorer les métadonnées VTT
+    if (line.startsWith('WEBVTT') || 
+        line.includes('-->') || 
+        line.match(/^\\d+$/) ||
+        line.startsWith('NOTE') ||
+        line === '') {
+      continue;
+    }
+    
+    // Nettoyer les tags HTML et ajouter le texte
+    const cleanText = line.replace(/<[^>]*>/g, '').trim();
+    if (cleanText.length > 0) {
+      textLines.push(cleanText);
+    }
+  }
+
+  const finalText = textLines.join(' ').replace(/\\s+/g, ' ').trim();
+  
+  // Nettoyer le dossier temporaire
+  await fs.rmdir(tempDir, { recursive: true });
+
+  resolve({
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ 
+      subtitles: finalText,
+      language: 'en-auto',
+      filename: subtitleFile,
+      message: 'Sous-titres auto-générés extraits avec succès'
+    })
+  });
+}
+
+🎯 POINTS CLÉS DE LA CORRECTION:
+- --write-auto-subs : Force les sous-titres auto-générés
+- --sub-langs "en,a.en" : Priorité anglais auto-généré
+- --no-write-subs : Évite les sous-titres manuels
+- Recherche spécifique des fichiers .en.vtt
+- Fallback si aucun sous-titre auto trouvé
+- Logs détaillés pour debugging
+
+🔧 Alternative si yt-dlp pose problème:
+Utilisez youtube-transcript-api en Python:
+
+pip install youtube-transcript-api
+
+Fonction Python alternative:
+from youtube_transcript_api import YouTubeTranscriptApi
+
+def get_transcript(video_id):
+    try:
+        # Essayer d'abord les sous-titres auto-générés en anglais
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+        return ' '.join([item['text'] for item in transcript])
+    except:
+        # Fallback sur n'importe quelle langue disponible
+        transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+        transcript = transcripts.find_generated_transcript(['en', 'fr'])
+        return ' '.join([item['text'] for item in transcript.fetch()])
+            `);
             
             // Vérifier si on est sur Netlify
             if (window.location.hostname.includes('netlify')) {
