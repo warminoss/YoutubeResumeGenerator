@@ -1,312 +1,4 @@
-console.log(`
-🚀 FONCTION NETLIFY CORRIGÉE POUR SOUS-TITRES ANGLAIS AUTO-GÉNÉRÉS
-
-📝 Remplacez netlify/functions/extract-subtitles.js par:
-
-const { exec } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
-const { tmpdir } = require('os');
-
-exports.handler = async (event, context) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405, 
-      headers,
-      body: JSON.stringify({ error: 'Méthode non autorisée' })
-    };
-  }
-
-  try {
-    const { video_id, url } = JSON.parse(event.body);
-    
-    if (!video_id && !url) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Video ID ou URL manquant' })
-      };
-    }
-
-    const tempDir = path.join(tmpdir(), \`yt-\${Date.now()}\`);
-    await fs.mkdir(tempDir, { recursive: true });
-
-    // COMMANDE CORRIGÉE: Force sous-titres auto-générés anglais
-    const command = \`yt-dlp --write-auto-subs --sub-langs "en" --sub-format "vtt" --skip-download --no-write-subs -o "\${tempDir}/%(id)s.%(ext)s" "\${url || 'https://youtube.com/watch?v=' + video_id}"\`;
-    
-    console.log('Exécution commande:', command);
-    
-    return new Promise((resolve) => {
-      exec(command, { timeout: 60000 }, async (error, stdout, stderr) => {
-        try {
-          console.log('yt-dlp stdout:', stdout);
-          console.log('yt-dlp stderr:', stderr);
-          
-          if (error && !stdout.includes('Downloading')) {
-            throw new Error(\`yt-dlp échoué: \${stderr || error.message}\`);
-          }
-
-          const files = await fs.readdir(tempDir);
-          console.log('Fichiers dans', tempDir, ':', files);
-          
-          // Chercher fichiers sous-titres auto-générés anglais
-          let subtitleFile = files.find(f => 
-            f.includes('.en.vtt') || 
-            f.includes('a.en.vtt') ||
-            (f.endsWith('.vtt') && f.includes('en'))
-          );
-          
-          // Fallback: premier fichier VTT trouvé
-          if (!subtitleFile) {
-            subtitleFile = files.find(f => f.endsWith('.vtt'));
-          }
-          
-          if (!subtitleFile) {
-            throw new Error(\`Aucun sous-titre trouvé. Fichiers: \${files.join(', ')}\`);
-          }
-
-          console.log('Fichier sous-titres:', subtitleFile);
-
-          const subtitlePath = path.join(tempDir, subtitleFile);
-          const subtitles = await fs.readFile(subtitlePath, 'utf8');
-          
-          // Parser VTT et extraire texte pur
-          const lines = subtitles.split('\\n');
-          const textLines = [];
-          
-          for (const line of lines) {
-            const trimmed = line.trim();
-            
-            // Ignorer métadonnées VTT et timestamps
-            if (trimmed.startsWith('WEBVTT') || 
-                trimmed.includes('-->') || 
-                trimmed.match(/^\\d+$/) ||
-                trimmed.startsWith('NOTE') ||
-                trimmed === '' ||
-                trimmed.startsWith('Kind:') ||
-                trimmed.startsWith('Language:')) {
-              continue;
-            }
-            
-            // Nettoyer HTML et ajouter texte
-            const cleanText = trimmed
-              .replace(/<[^>]*>/g, '')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&amp;/g, '&')
-              .trim();
-              
-            if (cleanText.length > 2) {
-              textLines.push(cleanText);
-            }
-          }
-
-          let finalText = textLines.join(' ').replace(/\\s+/g, ' ').trim();
-          
-          // Vérifier longueur minimale
-          if (finalText.length < 50) {
-            throw new Error('Sous-titres trop courts ou vides');
-          }
-
-          // Nettoyer dossier temporaire
-          await fs.rmdir(tempDir, { recursive: true });
-
-          resolve({
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ 
-              subtitles: finalText,
-              language: 'en-auto',
-              filename: subtitleFile,
-              length: finalText.length,
-              message: 'Sous-titres auto-générés anglais extraits'
-            })
-          });
-
-        } catch (err) {
-          console.error('Erreur traitement:', err);
-          
-          // Nettoyer en cas d'erreur
-          try {
-            await fs.rmdir(tempDir, { recursive: true });
-          } catch {}
-          
-          resolve({
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ 
-              error: err.message,
-              details: 'Vérifiez que la vidéo a des sous-titres auto-générés'
-            })
-          });
-        }
-      });
-    });
-
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
-
-🎯 ALTERNATIVE YOUTUBE-TRANSCRIPT-API (Plus fiable):
-
-📝 netlify/functions/extract-subtitles-python.py:
-
-import json
-import sys
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
-
-def handler(event, context):
-    try:
-        body = json.loads(event['body'])
-        url = body.get('url', '')
-        
-        # Extraire video_id de l'URL
-        if 'v=' in url:
-            video_id = url.split('v=')[1].split('&')[0]
-        elif 'youtu.be/' in url:
-            video_id = url.split('youtu.be/')[1].split('?')[0]
-        else:
-            return {
-                'statusCode': 400,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'URL YouTube invalide'})
-            }
-        
-        try:
-            # Essayer sous-titres auto-générés anglais
-            transcript = YouTubeTranscriptApi.get_transcript(
-                video_id, 
-                languages=['en', 'en-US', 'en-GB']
-            )
-            
-            # Formatter en texte simple
-            formatter = TextFormatter()
-            text = formatter.format_transcript(transcript)
-            
-            return {
-                'statusCode': 200,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({
-                    'subtitles': text,
-                    'language': 'en-auto',
-                    'message': 'Sous-titres extraits avec youtube-transcript-api'
-                })
-            }
-            
-        except Exception as transcript_error:
-            # Fallback: essayer toutes langues disponibles
-            try:
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                
-                # Chercher sous-titres auto-générés
-                for transcript in transcript_list:
-                    if transcript.is_generated:
-                        data = transcript.fetch()
-                        text = ' '.join([item['text'] for item in data])
-                        
-                        return {
-                            'statusCode': 200,
-                            'headers': {'Access-Control-Allow-Origin': '*'},
-                            'body': json.dumps({
-                                'subtitles': text,
-                                'language': transcript.language_code,
-                                'message': f'Sous-titres auto-générés en {transcript.language_code}'
-                            })
-                        }
-                
-                return {
-                    'statusCode': 404,
-                    'headers': {'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({
-                        'error': 'Aucun sous-titre auto-généré trouvé',
-                        'details': str(transcript_error)
-                    })
-                }
-                
-            except Exception as list_error:
-                return {
-                    'statusCode': 500,
-                    'headers': {'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({
-                        'error': f'Erreur accès transcription: {str(list_error)}',
-                        'video_id': video_id
-                    })
-                }
-    
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Erreur serveur: {str(e)}'})
-        }
-
-📦 REQUIREMENTS.TXT (pour Python):
-youtube-transcript-api==0.6.1
-
-📝 RUNTIME.TXT (pour spécifier Python):
-3.9
-
-🎯 AVANTAGES youtube-transcript-api:
-✅ Plus rapide que yt-dlp
-✅ Spécialisé pour YouTube
-✅ Gestion automatique des sous-titres auto-générés
-✅ Moins de dépendances système
-✅ API stable et maintenue
-
-💡 Pour utiliser Python sur Netlify:
-1. Renommez le fichier en .py
-2. Ajoutez requirements.txt
-3. Netlify détectera automatiquement Python
-            `);
-                
-            } catch (error) {
-                console.warn('Fonction Netlify indisponible, essai API alternative...');
-                
-                try {
-                    // Méthode 2: API YouTube Transcript via service externe
-                    const transcriptResponse = await fetch(`https://youtube-transcript-api.weilnet.workers.dev/transcript?video_id=${videoId}`);
-                    
-                    if (transcriptResponse.ok) {
-                        const transcriptData = await transcriptResponse.json();
-                        if (transcriptData.transcript) {
-                            return transcriptData.transcript.map(item => item.text).join(' ');
-                        }
-                    }
-                } catch (apiError) {
-                    console.warn('API externe indisponible');
-                }
-                
-                // Méthode 3: Fallback avec contenu unique
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                const variations = [
-                    `Cette vidéo présente une introduction complète aux concepts technologiques modernes. L'auteur explore les mécanismes fondamentaux de l'innovation numérique et explique comment ces technologies transforment notre quotidien. Les exemples concrets illustrent l'impact pratique de ces avancées sur différents secteurs d'activité.`,
-                    `Le contenu examine les enjeux actuels de la transformation digitale. La présentation détaille les stratégies d'adaptation aux nouvelles technologies et leurs implications pour les entreprises. L'expert partage des insights sur les meilleures pratiques d'implémentation.`,
-                    `Cette analyse approfondie révèle les tendances émergentes du secteur technologique. L'intervenant présente des cas d'usage innovants et explique les défis techniques rencontrés lors de la mise en œuvre. Les solutions proposées offrent des perspectives d'amélioration concrètes.`
-                ];
-                
-                const timestamp = Date.now();
-                const index = Math.abs((timestamp + videoId.charCodeAt(0)) % variations.length);
-                return `${variations[index]} [Vidéo ${videoId} - Analyse simulée ${new Date().toLocaleString('fr-FR')}]`;
-            }
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -354,15 +46,16 @@ youtube-transcript-api==0.6.1
             color: #1e40af;
         }
 
-        input {
+        input, textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #fbbf24;
             border-radius: 8px;
             font-size: 16px;
+            font-family: inherit;
         }
 
-        input:focus {
+        input:focus, textarea:focus {
             outline: none;
             border-color: #1e40af;
             box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
@@ -472,6 +165,23 @@ youtube-transcript-api==0.6.1
         .note a:hover {
             text-decoration: underline;
         }
+
+        .debug-info {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -479,7 +189,7 @@ youtube-transcript-api==0.6.1
         <h1>🎬 YouTube Subtitle Analyzer</h1>
         
         <div class="api-key-section">
-            <label for="apiKey">Clé API Gemini :</label>
+            <label for="apiKey">🔑 Clé API Gemini :</label>
             <input type="password" id="apiKey" placeholder="Entrez votre clé API Gemini..." />
             <div class="note">
                 Obtenez votre clé API gratuite sur <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
@@ -487,15 +197,28 @@ youtube-transcript-api==0.6.1
         </div>
 
         <div class="input-section">
-            <label for="youtubeUrl">URL YouTube :</label>
+            <label for="youtubeUrl">🎥 URL YouTube :</label>
             <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." />
         </div>
 
+        <div class="input-section">
+            <label for="subtitles">📝 Sous-titres (optionnel - copiez depuis YouTube) :</label>
+            <textarea id="subtitles" rows="8" placeholder="Collez ici les sous-titres de la vidéo...
+
+💡 Comment obtenir les sous-titres :
+1. Allez sur YouTube
+2. Cliquez sur 'CC' ou '⚙️' → Sous-titres
+3. Cliquez sur 'Ouvrir la transcription'
+4. Copiez tout le texte et collez ici"></textarea>
+        </div>
+
         <button class="btn" onclick="processVideo()">
-            Analyser la vidéo
+            ✨ Analyser la vidéo
         </button>
 
         <div id="status"></div>
+        
+        <div class="debug-info" id="debugInfo"></div>
 
         <div class="result-section" id="resultSection">
             <h3>📋 Résumé et analyse :</h3>
@@ -508,6 +231,14 @@ youtube-transcript-api==0.6.1
 
     <script>
         let analysisResult = '';
+        let debugLogs = [];
+
+        function log(message) {
+            debugLogs.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            document.getElementById('debugInfo').textContent = debugLogs.join('\n');
+            document.getElementById('debugInfo').classList.add('show');
+            console.log(message);
+        }
 
         function showStatus(message, type = 'loading') {
             const statusDiv = document.getElementById('status');
@@ -524,102 +255,143 @@ youtube-transcript-api==0.6.1
             return match ? match[1] : null;
         }
 
+        async function extractSubtitlesWithAPI(videoId) {
+            log(`Tentative extraction pour vidéo: ${videoId}`);
+            
+            // API 1: Transcript API directe
+            try {
+                log('Test API 1: YouTube Transcript API');
+                const response = await fetch(`https://cors-anywhere.herokuapp.com/https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=AIzaSyB-riBkMr8PZVVPqOXw3Kd_4E8Qa8BjLj8`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('API 1 réponse: ' + JSON.stringify(data).substring(0, 100));
+                }
+            } catch (e) {
+                log('API 1 échouée: ' + e.message);
+            }
+
+            // API 2: Service externe
+            try {
+                log('Test API 2: Service externe');
+                const response = await fetch(`https://api.freeapi.app/api/v1/public/youtube/transcript/${videoId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.data && data.data.transcript) {
+                        log('✅ API 2 succès !');
+                        return data.data.transcript;
+                    }
+                }
+                log('API 2: Pas de données transcript');
+            } catch (e) {
+                log('API 2 échouée: ' + e.message);
+            }
+
+            // API 3: Alternative simple
+            try {
+                log('Test API 3: Alternative');
+                const response = await fetch(`https://subtitles-for-youtube.p.rapidapi.com/subtitles/${videoId}.json`, {
+                    headers: {
+                        'X-RapidAPI-Key': 'demo', // Clé de démo
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('API 3 réponse: ' + JSON.stringify(data).substring(0, 100));
+                }
+            } catch (e) {
+                log('API 3 échouée: ' + e.message);
+            }
+
+            // API 4: YouTube Data API v3 (sans clé)
+            try {
+                log('Test API 4: YouTube Data');
+                const response = await fetch(`https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.events) {
+                        const transcript = data.events
+                            .filter(event => event.segs)
+                            .map(event => event.segs.map(seg => seg.utf8).join(''))
+                            .join(' ');
+                        
+                        if (transcript.length > 50) {
+                            log('✅ API 4 succès ! Sous-titres trouvés');
+                            return transcript;
+                        }
+                    }
+                }
+                log('API 4: Pas de sous-titres disponibles');
+            } catch (e) {
+                log('API 4 échouée: ' + e.message);
+            }
+
+            log('❌ TOUTES LES API ONT ÉCHOUÉ');
+            throw new Error('Impossible d\'extraire les sous-titres. La vidéo n\'a peut-être pas de sous-titres auto-générés.');
+        }
+
         async function extractSubtitles(videoUrl) {
-            showStatus('Extraction des sous-titres en cours...');
+            showStatus('🔍 Recherche des sous-titres...');
             
             const videoId = extractVideoId(videoUrl);
             if (!videoId) {
-                throw new Error('ID vidéo introuvable');
+                throw new Error('ID vidéo introuvable dans l\'URL');
             }
 
+            log(`=== DÉBUT EXTRACTION ===`);
+            log(`URL: ${videoUrl}`);
+            log(`Video ID: ${videoId}`);
+
             try {
-                // Méthode 1: Fonction Netlify avec youtube-transcript-api
-                const response = await fetch('/.netlify/functions/extract-subtitles', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ video_id: videoId, url: videoUrl })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erreur fonction Netlify: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                return data.subtitles;
+                // Tentative d'extraction avec APIs publiques
+                const subtitles = await extractSubtitlesWithAPI(videoId);
+                log(`✅ Sous-titres extraits: ${subtitles.length} caractères`);
+                return subtitles;
                 
             } catch (error) {
-                console.warn('Fonction Netlify indisponible, essai API alternative...');
+                log(`❌ Extraction échouée: ${error.message}`);
                 
-                try {
-                    // Méthode 2: API YouTube Transcript via service externe
-                    const transcriptResponse = await fetch(`https://youtube-transcript-api.weilnet.workers.dev/transcript?video_id=${videoId}`);
-                    
-                    if (transcriptResponse.ok) {
-                        const transcriptData = await transcriptResponse.json();
-                        if (transcriptData.transcript) {
-                            return transcriptData.transcript.map(item => item.text).join(' ');
-                        }
-                    }
-                } catch (apiError) {
-                    console.warn('API externe indisponible');
-                }
+                // Dernier recours: Indiquer à l'utilisateur quoi faire
+                showStatus('❌ Extraction impossible. Voir les logs ci-dessous.', 'error');
                 
-                // Méthode 3: Fallback avec contenu unique
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                const variations = [
-                    `Cette vidéo présente une introduction complète aux concepts technologiques modernes. L'auteur explore les mécanismes fondamentaux de l'innovation numérique et explique comment ces technologies transforment notre quotidien. Les exemples concrets illustrent l'impact pratique de ces avancées sur différents secteurs d'activité.`,
-                    `Le contenu examine les enjeux actuels de la transformation digitale. La présentation détaille les stratégies d'adaptation aux nouvelles technologies et leurs implications pour les entreprises. L'expert partage des insights sur les meilleures pratiques d'implémentation.`,
-                    `Cette analyse approfondie révèle les tendances émergentes du secteur technologique. L'intervenant présente des cas d'usage innovants et explique les défis techniques rencontrés lors de la mise en œuvre. Les solutions proposées offrent des perspectives d'amélioration concrètes.`
-                ];
-                
-                const timestamp = Date.now();
-                const index = Math.abs((timestamp + videoId.charCodeAt(0)) % variations.length);
-                return `${variations[index]} [Vidéo ${videoId} - Analyse simulée ${new Date().toLocaleString('fr-FR')}]`;
+                throw new Error(`Impossible d'extraire les sous-titres automatiquement.
+
+SOLUTIONS:
+1. Utilisez une vidéo avec sous-titres auto-générés activés
+2. Ou créez un serveur local avec yt-dlp
+3. Ou utilisez l'extension Chrome "YouTube Transcript"
+
+VIDÉO TESTÉE: ${videoId}
+TOUTES LES API ONT ÉCHOUÉ - Voir logs pour détails`);
             }
         }
 
         async function analyzeWithGemini(subtitles, apiKey, videoUrl) {
-            showStatus('Analyse avec Gemini en cours...');
+            showStatus('🤖 Analyse avec Gemini...');
             
             const videoId = extractVideoId(videoUrl);
-            const currentTime = new Date().toISOString();
             
-            const prompt = `Analyse ces sous-titres de vidéo YouTube et crée un résumé UNIQUE en français :
+            const prompt = `Analyse ces VRAIS sous-titres de la vidéo YouTube ${videoId} et crée un résumé détaillé en français :
 
-VIDÉO: ${videoId}
-HEURE D'ANALYSE: ${currentTime}
+**ANALYSE DEMANDÉE:**
 
-Crée une analyse structurée avec:
+1. **RÉSUMÉ GÉNÉRAL** (2-3 paragraphes)
+2. **POINTS CLÉS PRINCIPAUX** (liste)
+3. **DÉTAILS TECHNIQUES** mentionnés
+4. **ANECDOTES/EXEMPLES** donnés
+5. **CONCLUSION ET TAKEAWAYS**
 
-**1. RÉSUMÉ GÉNÉRAL**
-[2-3 paragraphes sur le contenu principal]
-
-**2. POINTS CLÉS**
-• [Point important 1]
-• [Point important 2] 
-• [Point important 3]
-
-**3. DÉTAILS TECHNIQUES**
-[Concepts techniques expliqués]
-
-**4. ANECDOTES ET EXEMPLES**
-[Histoires ou exemples mentionnés]
-
-**5. CONCLUSION**
-[Takeaways principaux]
-
-SOUS-TITRES:
+**SOUS-TITRES À ANALYSER:**
 ${subtitles}
 
-IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce contenu.`;
+Crée une analyse SPÉCIFIQUE à ce contenu réel. Ne donne pas de réponse générique.`;
 
             try {
                 const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
@@ -635,7 +407,7 @@ IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce c
                             }]
                         }],
                         generationConfig: {
-                            temperature: 0.9,
+                            temperature: 0.7,
                             topK: 40,
                             topP: 0.95,
                             maxOutputTokens: 2048
@@ -653,7 +425,7 @@ IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce c
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                     return data.candidates[0].content.parts[0].text;
                 } else {
-                    throw new Error('Réponse invalide de Gemini: ' + JSON.stringify(data));
+                    throw new Error('Réponse invalide de Gemini');
                 }
             } catch (error) {
                 throw new Error(`Erreur analyse Gemini: ${error.message}`);
@@ -663,53 +435,66 @@ IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce c
         async function processVideo() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const videoUrl = document.getElementById('youtubeUrl').value.trim();
+            const manualSubtitles = document.getElementById('subtitles').value.trim();
 
-            // Validation des entrées
+            // Reset des logs
+            debugLogs = [];
+            document.getElementById('debugInfo').classList.remove('show');
+
             if (!apiKey) {
-                showStatus('Veuillez entrer votre clé API Gemini', 'error');
+                showStatus('❌ Clé API Gemini requise', 'error');
                 return;
             }
 
             if (!videoUrl) {
-                showStatus('Veuillez entrer une URL YouTube', 'error');
+                showStatus('❌ URL YouTube requise', 'error');
                 return;
             }
 
             const videoId = extractVideoId(videoUrl);
             if (!videoId) {
-                showStatus('URL YouTube invalide', 'error');
+                showStatus('❌ URL YouTube invalide', 'error');
                 return;
             }
 
-            // Désactiver le bouton pendant le traitement
             const analyzeBtn = document.querySelector('.btn');
             analyzeBtn.disabled = true;
-            analyzeBtn.textContent = 'Traitement en cours...';
 
             try {
-                // Étape 1: Extraction des sous-titres
-                const subtitles = await extractSubtitles(videoUrl);
-                
-                if (!subtitles || subtitles.trim().length < 20) {
-                    throw new Error('Sous-titres introuvables ou trop courts');
+                let subtitles;
+
+                // Priorité aux sous-titres manuels si fournis
+                if (manualSubtitles && manualSubtitles.length > 50) {
+                    log('✅ Utilisation des sous-titres manuels fournis');
+                    subtitles = manualSubtitles;
+                    analyzeBtn.textContent = 'Analyse en cours...';
+                } else {
+                    log('Aucun sous-titre manuel, tentative extraction automatique...');
+                    analyzeBtn.textContent = 'Extraction en cours...';
+                    subtitles = await extractSubtitles(videoUrl);
+                    analyzeBtn.textContent = 'Analyse en cours...';
                 }
                 
-                // Étape 2: Analyse avec Gemini
+                if (!subtitles || subtitles.trim().length < 20) {
+                    throw new Error('Sous-titres trop courts (moins de 20 caractères)');
+                }
+
+                log(`Analyse de ${subtitles.length} caractères de sous-titres`);
+                
+                // Analyse avec Gemini
                 analysisResult = await analyzeWithGemini(subtitles, apiKey, videoUrl);
                 
-                // Affichage du résultat
+                // Affichage
                 document.getElementById('resultContent').textContent = analysisResult;
                 document.getElementById('resultSection').style.display = 'block';
                 
-                showStatus('✅ Analyse terminée avec succès !', 'success');
-                
-                setTimeout(hideStatus, 3000);
+                showStatus('✅ Analyse terminée !', 'success');
+                log(`✅ SUCCÈS - Analyse terminée pour ${videoId}`);
                 
             } catch (error) {
-                showStatus(`❌ Erreur: ${error.message}`, 'error');
-                console.error('Erreur complète:', error);
+                showStatus(`❌ ${error.message}`, 'error');
+                log(`❌ ERREUR: ${error.message}`);
             } finally {
-                // Réactiver le bouton
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = 'Analyser la vidéo';
             }
@@ -717,7 +502,7 @@ IMPORTANT: Réponds uniquement en français avec une analyse spécifique à ce c
 
         function downloadResult() {
             if (!analysisResult) {
-                showStatus('Aucun résultat à télécharger', 'error');
+                showStatus('❌ Aucun résultat à télécharger', 'error');
                 return;
             }
 
@@ -736,7 +521,8 @@ ID Vidéo: ${videoId}
 ${analysisResult}
 
 ============================================
-Généré par YouTube Subtitle Analyzer
+Logs d'extraction:
+${debugLogs.join('\n')}
 ============================================`;
 
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -754,244 +540,50 @@ Généré par YouTube Subtitle Analyzer
             setTimeout(hideStatus, 3000);
         }
 
-        // Debug: Afficher les erreurs dans la console
-        window.addEventListener('error', function(e) {
-            console.error('Erreur JavaScript:', e.error);
-            showStatus('Erreur technique: ' + e.error.message, 'error');
-        });
-
-        // Test de l'API Gemini au chargement
+        // Test automatique au chargement
         window.addEventListener('load', function() {
-            console.log(`
-🚀 FONCTION NETLIFY CORRIGÉE POUR SOUS-TITRES ANGLAIS AUTO-GÉNÉRÉS
-
-📝 Remplacez netlify/functions/extract-subtitles.js par:
-
-const { exec } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
-const { tmpdir } = require('os');
-
-exports.handler = async (event, context) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405, 
-      headers,
-      body: JSON.stringify({ error: 'Méthode non autorisée' })
-    };
-  }
-
-  try {
-    const { url } = JSON.parse(event.body);
-    
-    if (!url) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'URL manquante' })
-      };
-    }
-
-    const tempDir = path.join(tmpdir(), \`yt-\${Date.now()}\`);
-    await fs.mkdir(tempDir, { recursive: true });
-
-    // Commande modifiée pour forcer les sous-titres auto-générés anglais
-    const command = \`yt-dlp --write-auto-subs --sub-langs "en,a.en" --sub-format "vtt" --skip-download --no-write-subs -o "\${tempDir}/%(title)s.%(ext)s" "\${url}"\`;
-    
-    return new Promise((resolve) => {
-      exec(command, { timeout: 30000 }, async (error, stdout, stderr) => {
-        try {
-          console.log('yt-dlp stdout:', stdout);
-          console.log('yt-dlp stderr:', stderr);
-          
-          if (error) {
-            // Essayer une commande alternative si la première échoue
-            const altCommand = \`yt-dlp --write-auto-subs --sub-langs "en" --sub-format "vtt" --skip-download -o "\${tempDir}/%(title)s.%(ext)s" "\${url}"\`;
+            log('Application chargée');
+            log('Prêt pour test d\'extraction');
             
-            return new Promise((resolve2) => {
-              exec(altCommand, { timeout: 30000 }, async (error2, stdout2, stderr2) => {
-                try {
-                  if (error2) {
-                    throw new Error(\`Extraction échouée: \${stderr2 || error2.message}\`);
-                  }
-                  await processSubtitles(tempDir, resolve2, headers);
-                } catch (err) {
-                  resolve2({
-                    statusCode: 500,
-                    headers,
-                    body: JSON.stringify({ error: err.message })
-                  });
-                }
-              });
-            });
-          }
-
-          await processSubtitles(tempDir, resolve, headers);
-
-        } catch (err) {
-          resolve({
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: err.message })
-          });
-        }
-      });
-    });
-
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
-
-async function processSubtitles(tempDir, resolve, headers) {
-  const files = await fs.readdir(tempDir);
-  console.log('Fichiers trouvés:', files);
-  
-  // Chercher les sous-titres auto-générés en anglais en priorité
-  let subtitleFile = files.find(f => f.includes('.en.vtt') || f.includes('a.en.vtt'));
-  
-  // Fallback: n'importe quel fichier VTT
-  if (!subtitleFile) {
-    subtitleFile = files.find(f => f.endsWith('.vtt'));
-  }
-  
-  if (!subtitleFile) {
-    throw new Error('Aucun fichier de sous-titres trouvé. Fichiers disponibles: ' + files.join(', '));
-  }
-
-  console.log('Fichier de sous-titres utilisé:', subtitleFile);
-
-  const subtitles = await fs.readFile(path.join(tempDir, subtitleFile), 'utf8');
-  
-  // Parser le VTT pour extraire uniquement le texte
-  const lines = subtitles.split('\\n');
-  const textLines = [];
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    
-    // Ignorer les métadonnées VTT
-    if (line.startsWith('WEBVTT') || 
-        line.includes('-->') || 
-        line.match(/^\\d+$/) ||
-        line.startsWith('NOTE') ||
-        line === '') {
-      continue;
-    }
-    
-    // Nettoyer les tags HTML et ajouter le texte
-    const cleanText = line.replace(/<[^>]*>/g, '').trim();
-    if (cleanText.length > 0) {
-      textLines.push(cleanText);
-    }
-  }
-
-  const finalText = textLines.join(' ').replace(/\\s+/g, ' ').trim();
-  
-  // Nettoyer le dossier temporaire
-  await fs.rmdir(tempDir, { recursive: true });
-
-  resolve({
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ 
-      subtitles: finalText,
-      language: 'en-auto',
-      filename: subtitleFile,
-      message: 'Sous-titres auto-générés extraits avec succès'
-    })
-  });
-}
-
-🎯 POINTS CLÉS DE LA CORRECTION:
-- --write-auto-subs : Force les sous-titres auto-générés
-- --sub-langs "en,a.en" : Priorité anglais auto-généré
-- --no-write-subs : Évite les sous-titres manuels
-- Recherche spécifique des fichiers .en.vtt
-- Fallback si aucun sous-titre auto trouvé
-- Logs détaillés pour debugging
-
-🔧 Alternative si yt-dlp pose problème:
-Utilisez youtube-transcript-api en Python:
-
-pip install youtube-transcript-api
-
-Fonction Python alternative:
-from youtube_transcript_api import YouTubeTranscriptApi
-
-def get_transcript(video_id):
-    try:
-        # Essayer d'abord les sous-titres auto-générés en anglais
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-        return ' '.join([item['text'] for item in transcript])
-    except:
-        # Fallback sur n'importe quelle langue disponible
-        transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
-        transcript = transcripts.find_generated_transcript(['en', 'fr'])
-        return ' '.join([item['text'] for item in transcript.fetch()])
-            `);
-            
-            // Vérifier si on est sur Netlify
-            if (window.location.hostname.includes('netlify')) {
-                console.log('✅ Hébergé sur Netlify');
-            } else {
-                console.log('⚠️ Testé localement - Les fonctions Netlify ne fonctionneront pas');
-            }
+            // Test avec une vidéo connue pour avoir des sous-titres
+            setTimeout(() => {
+                log('Pour tester: utilisez une vidéo populaire avec sous-titres auto-générés');
+                log('Exemple: https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+            }, 1000);
         });
 
-        // Test simple de l'API Gemini
-        async function testGeminiAPI(apiKey) {
-            try {
-                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-goog-api-key': apiKey
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: "Dis bonjour en français"
-                            }]
-                        }]
-                    })
-                });
-
-                const data = await response.json();
-                console.log('Test API Gemini:', data);
-                return response.ok;
-            } catch (error) {
-                console.error('Erreur test API:', error);
-                return false;
-            }
-        }
-
-        // Test automatique de l'API quand on entre la clé
+        // Test de la clé API
         document.getElementById('apiKey').addEventListener('blur', async function() {
             const apiKey = this.value.trim();
             if (apiKey && apiKey.length > 20) {
-                showStatus('Test de la clé API...', 'loading');
-                const isValid = await testGeminiAPI(apiKey);
-                if (isValid) {
-                    showStatus('✅ Clé API valide', 'success');
-                } else {
-                    showStatus('❌ Clé API invalide', 'error');
+                try {
+                    showStatus('Test clé API...', 'loading');
+                    
+                    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-goog-api-key': apiKey
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: "Test" }]
+                            }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        showStatus('✅ Clé API valide', 'success');
+                        log('✅ Clé API Gemini validée');
+                    } else {
+                        showStatus('❌ Clé API invalide', 'error');
+                        log('❌ Clé API Gemini invalide');
+                    }
+                } catch (error) {
+                    showStatus('❌ Erreur test API', 'error');
+                    log('❌ Erreur test API: ' + error.message);
                 }
+                
                 setTimeout(hideStatus, 2000);
             }
         });
